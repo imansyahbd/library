@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pustaka Pastel - Manajemen Pengetahuan</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body {
+            font-family: 'Quicksand', sans-serif;
+            background-color: #FDFBF7; /* Cream background */
+        }
+        
+        /* Pastel Colors Utility */
+        .bg-pastel-pink { background-color: #FFD1DC; }
+        .bg-pastel-blue { background-color: #AEC6CF; }
+        .bg-pastel-green { background-color: #C1E1C1; }
+        .bg-pastel-yellow { background-color: #FDFD96; }
+        .bg-pastel-purple { background-color: #B39EB5; }
+        
+        .text-pastel-dark { color: #555; }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #AEC6CF; 
+            border-radius: 4px;
+        }
+
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+        }
+    </style>
+</head>
+<body class="text-gray-700">
+
+    <!-- Navbar -->
+    <nav class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-book-open text-pastel-purple text-2xl"></i>
+                    <h1 class="text-2xl font-bold text-gray-800 tracking-wide">Pustaka<span class="text-purple-400">Pastel</span></h1>
+                </div>
+                <button onclick="toggleModal('addModal')" class="bg-pastel-blue text-white hover:bg-blue-300 font-bold py-2 px-6 rounded-full transition duration-300 shadow-md flex items-center gap-2">
+                    <i class="fa-solid fa-plus"></i> Tambah Baru
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        
+        <!-- Filter Category Section -->
+        <div class="mb-6 flex flex-wrap gap-3 justify-center sm:justify-start">
+            <button onclick="filterItems('all')" class="filter-btn active bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded-full text-sm font-semibold transition" data-filter="all">Semua</button>
+            <button onclick="filterItems('Buku')" class="filter-btn bg-white border border-pink-200 hover:bg-pastel-pink hover:text-white px-4 py-2 rounded-full text-sm font-semibold transition" data-filter="Buku">📚 Buku</button>
+            <button onclick="filterItems('Paper')" class="filter-btn bg-white border border-blue-200 hover:bg-pastel-blue hover:text-white px-4 py-2 rounded-full text-sm font-semibold transition" data-filter="Paper">📄 Paper</button>
+            <button onclick="filterItems('Artikel')" class="filter-btn bg-white border border-green-200 hover:bg-pastel-green hover:text-white px-4 py-2 rounded-full text-sm font-semibold transition" data-filter="Artikel">📰 Artikel</button>
+            <button onclick="filterItems('Ensiklopedia')" class="filter-btn bg-white border border-purple-200 hover:bg-pastel-purple hover:text-white px-4 py-2 rounded-full text-sm font-semibold transition" data-filter="Ensiklopedia">🌍 Ensiklopedia</button>
+        </div>
+
+        <!-- Search & Year Filter Section (NEW) -->
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 mb-8 flex flex-col md:flex-row gap-4 items-center">
+            <div class="relative flex-grow w-full">
+                <i class="fa-solid fa-magnifying-glass absolute left-4 top-3.5 text-gray-400"></i>
+                <input type="text" id="searchInput" placeholder="Cari judul atau penulis..." class="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-200 focus:bg-white transition text-gray-600 placeholder-gray-400">
+            </div>
+            <div class="relative w-full md:w-1/4">
+                <i class="fa-solid fa-calendar-days absolute left-4 top-3.5 text-gray-400"></i>
+                <input type="number" id="yearFilterInput" placeholder="Tahun" class="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-200 focus:bg-white transition text-gray-600 placeholder-gray-400">
+            </div>
+        </div>
+
+        <!-- Stats Section -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+            <div class="bg-pastel-pink bg-opacity-30 p-4 rounded-2xl text-center">
+                <h3 class="text-sm font-bold text-gray-500">Total Koleksi</h3>
+                <p class="text-3xl font-bold text-pink-500" id="statTotal">0</p>
+            </div>
+            <div class="bg-pastel-blue bg-opacity-30 p-4 rounded-2xl text-center">
+                <h3 class="text-sm font-bold text-gray-500">Terbaru</h3>
+                <p class="text-lg font-bold text-blue-500 truncate" id="statNewest">-</p>
+            </div>
+        </div>
+
+        <!-- Loader -->
+        <div id="loader" class="flex justify-center items-center py-20">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-400"></div>
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="hidden text-center py-20">
+            <i class="fa-solid fa-magnifying-glass text-6xl text-gray-200 mb-4"></i>
+            <p class="text-gray-400 text-xl">Tidak ada koleksi yang cocok.</p>
+        </div>
+
+        <!-- Grid Cards -->
+        <div id="itemsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Items will be injected here via JS -->
+        </div>
+    </main>
+
+    <!-- Modal Add Item -->
+    <div id="addModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex justify-center items-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all scale-100">
+            <div class="bg-pastel-blue p-4 flex justify-between items-center">
+                <h2 class="text-white font-bold text-lg"><i class="fa-solid fa-plus-circle"></i> Tambah Koleksi</h2>
+                <button onclick="toggleModal('addModal')" class="text-white hover:text-gray-200"><i class="fa-solid fa-times text-xl"></i></button>
+            </div>
+            
+            <form id="addItemForm" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-600 mb-1">Judul</label>
+                    <input type="text" id="inputTitle" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-200" placeholder="Contoh: Sejarah Dunia">
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">Tipe</label>
+                        <select id="inputType" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-200">
+                            <option value="Buku">Buku</option>
+                            <option value="Paper">Paper</option>
+                            <option value="Artikel">Artikel</option>
+                            <option value="Ensiklopedia">Ensiklopedia</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">Tahun</label>
+                        <input type="number" id="inputYear" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-200" placeholder="2024">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-600 mb-1">Penulis</label>
+                    <input type="text" id="inputAuthor" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-200" placeholder="Nama Penulis">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-600 mb-1">Ringkasan Singkat</label>
+                    <textarea id="inputSummary" rows="3" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-200" placeholder="Deskripsi singkat..."></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-600 mb-1">Link (Opsional)</label>
+                    <input type="url" id="inputLink" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-200" placeholder="https://...">
+                </div>
+
+                <div class="pt-4">
+                    <button type="submit" class="w-full bg-pastel-blue text-white font-bold py-2 rounded-lg hover:bg-blue-300 transition duration-300 shadow-md">Simpan Data</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-white shadow-lg rounded-lg px-6 py-4 transform translate-y-20 opacity-0 transition duration-300 z-50 flex items-center gap-3 border-l-4 border-green-400">
+        <i class="fa-solid fa-check-circle text-green-400 text-xl"></i>
+        <div>
+            <h4 class="font-bold text-sm text-gray-800">Berhasil!</h4>
+            <p class="text-xs text-gray-500" id="toastMessage">Data disimpan.</p>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. Konfigurasi Supabase ---
+        const SUPABASE_URL = "https://ticyujhxcnsmqwzljmjh.supabase.co";
+        const SUPABASE_KEY = "sb_publishable_b6aRW5hWrTpSWmKzAnVnHA_vTyXP_bo"; // User provided Key
+        
+        // Inisialisasi Client
+        const { createClient } = supabase;
+        const _supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // State Global
+        let allItems = [];
+        let currentFilter = 'all';
+        let searchQuery = '';
+        let yearQuery = '';
+
+        // --- 2. Main Logic ---
+
+        // Saat halaman dimuat
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchData();
+            
+            // Event Listeners untuk Search dan Filter Tahun
+            document.getElementById('searchInput').addEventListener('input', (e) => {
+                searchQuery = e.target.value.toLowerCase();
+                renderItems();
+            });
+
+            document.getElementById('yearFilterInput').addEventListener('input', (e) => {
+                yearQuery = e.target.value;
+                renderItems();
+            });
+        });
+
+        // Fetch Data dari Supabase
+        async function fetchData() {
+            document.getElementById('loader').classList.remove('hidden');
+            document.getElementById('itemsGrid').innerHTML = '';
+            document.getElementById('emptyState').classList.add('hidden');
+
+            try {
+                const { data, error } = await _supabase
+                    .from('library_items')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                allItems = data;
+                updateStats();
+                renderItems();
+            } catch (err) {
+                console.error("Error fetching:", err);
+                showToast("Gagal mengambil data: " + err.message, true);
+            } finally {
+                document.getElementById('loader').classList.add('hidden');
+            }
+        }
+
+        // Render Cards ke HTML (Updated Logic)
+        function renderItems() {
+            const grid = document.getElementById('itemsGrid');
+            grid.innerHTML = '';
+
+            // Filter data bertingkat
+            let filteredData = allItems;
+
+            // 1. Filter berdasarkan Kategori (Jenis)
+            if (currentFilter !== 'all') {
+                filteredData = filteredData.filter(item => item.type === currentFilter);
+            }
+
+            // 2. Filter berdasarkan Pencarian (Judul/Penulis)
+            if (searchQuery) {
+                filteredData = filteredData.filter(item => 
+                    item.title.toLowerCase().includes(searchQuery) ||
+                    item.author.toLowerCase().includes(searchQuery)
+                );
+            }
+
+            // 3. Filter berdasarkan Tahun
+            if (yearQuery) {
+                // Konversi ke string untuk perbandingan aman, atau == untuk loose equality
+                filteredData = filteredData.filter(item => item.year == yearQuery);
+            }
+
+            // Tampilkan Empty State jika hasil filter kosong
+            if (filteredData.length === 0) {
+                document.getElementById('emptyState').classList.remove('hidden');
+                // Ubah pesan empty state sedikit agar lebih sesuai konteks
+                const emptyMsg = allItems.length === 0 ? "Belum ada koleksi tersimpan." : "Tidak ada hasil pencarian.";
+                document.querySelector('#emptyState p').innerText = emptyMsg;
+                return;
+            } else {
+                document.getElementById('emptyState').classList.add('hidden');
+            }
+
+            filteredData.forEach(item => {
+                // Tentukan warna berdasarkan tipe
+                let typeColorClass = 'bg-gray-100 text-gray-600';
+                let icon = 'fa-file';
+                
+                if(item.type === 'Buku') { typeColorClass = 'bg-pastel-pink text-pink-600'; icon = 'fa-book'; }
+                else if(item.type === 'Paper') { typeColorClass = 'bg-pastel-blue text-blue-600'; icon = 'fa-file-alt'; }
+                else if(item.type === 'Artikel') { typeColorClass = 'bg-pastel-green text-green-600'; icon = 'fa-newspaper'; }
+                else if(item.type === 'Ensiklopedia') { typeColorClass = 'bg-pastel-purple text-purple-600'; icon = 'fa-globe'; }
+
+                const card = document.createElement('div');
+                card.className = "bg-white rounded-2xl p-6 shadow-sm border border-gray-100 card-hover transition duration-300 flex flex-col justify-between h-full";
+                
+                card.innerHTML = `
+                    <div>
+                        <div class="flex justify-between items-start mb-4">
+                            <span class="${typeColorClass} text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1">
+                                <i class="fa-solid ${icon}"></i> ${item.type}
+                            </span>
+                            <span class="text-xs text-gray-400 font-mono">${item.year || '-'}</span>
+                        </div>
+                        
+                        <h3 class="text-lg font-bold text-gray-800 mb-1 leading-tight">${item.title}</h3>
+                        <p class="text-sm text-gray-500 mb-3 italic">Oleh: ${item.author}</p>
+                        
+                        <p class="text-gray-600 text-sm mb-4 line-clamp-3">
+                            ${item.summary || 'Tidak ada ringkasan.'}
+                        </p>
+                    </div>
+
+                    <div class="flex justify-between items-center border-t border-gray-100 pt-4 mt-2">
+                        <div>
+                            ${item.link ? `<a href="${item.link}" target="_blank" class="text-blue-400 hover:text-blue-600 text-sm font-semibold transition"><i class="fa-solid fa-link"></i> Buka Link</a>` : '<span class="text-gray-300 text-xs">No Link</span>'}
+                        </div>
+                        <button onclick="deleteItem(${item.id})" class="text-red-300 hover:text-red-500 transition" title="Hapus">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // Tambah Data Baru
+        document.getElementById('addItemForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const newItem = {
+                title: document.getElementById('inputTitle').value,
+                type: document.getElementById('inputType').value,
+                author: document.getElementById('inputAuthor').value,
+                year: document.getElementById('inputYear').value ? parseInt(document.getElementById('inputYear').value) : null,
+                summary: document.getElementById('inputSummary').value,
+                link: document.getElementById('inputLink').value
+            };
+
+            // Tombol loading state
+            const btn = e.target.querySelector('button');
+            const originalText = btn.innerText;
+            btn.innerText = 'Menyimpan...';
+            btn.disabled = true;
+
+            try {
+                const { data, error } = await _supabase.from('library_items').insert([newItem]).select();
+                
+                if (error) throw error;
+
+                // Reset form dan close modal
+                e.target.reset();
+                toggleModal('addModal');
+                
+                // Refresh data lokal (optimistic update agar cepat) atau fetch ulang
+                // Kita fetch ulang agar sync dengan ID dari DB
+                fetchData(); 
+                showToast("Item berhasil ditambahkan!");
+
+            } catch (err) {
+                showToast("Error: " + err.message, true);
+            } finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        });
+
+        // Hapus Data
+        async function deleteItem(id) {
+            if(!confirm("Yakin ingin menghapus item ini?")) return;
+
+            try {
+                const { error } = await _supabase.from('library_items').delete().eq('id', id);
+                if (error) throw error;
+
+                // Hapus dari array lokal untuk update instan
+                allItems = allItems.filter(item => item.id !== id);
+                renderItems();
+                updateStats();
+                showToast("Item dihapus.");
+            } catch (err) {
+                showToast("Gagal menghapus: " + err.message, true);
+            }
+        }
+
+        // --- 3. UI Helpers ---
+
+        function toggleModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal.classList.contains('hidden')) {
+                modal.classList.remove('hidden');
+                setTimeout(() => modal.firstElementChild.classList.add('scale-100'), 10);
+            } else {
+                modal.classList.add('hidden');
+            }
+        }
+
+        function filterItems(type) {
+            currentFilter = type;
+            
+            // Update UI tombol filter
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                if(btn.dataset.filter === type) {
+                    btn.classList.add('bg-gray-200'); // Simple active state logic override
+                    // Reset style manual sesuai warna masing-masing agak kompleks di JS murni, 
+                    // kita pakai border indikator saja untuk simplicity
+                    btn.style.borderColor = "#555";
+                } else {
+                    btn.style.borderColor = "transparent";
+                }
+            });
+
+            renderItems();
+        }
+
+        function updateStats() {
+            document.getElementById('statTotal').innerText = allItems.length;
+            if (allItems.length > 0) {
+                document.getElementById('statNewest').innerText = allItems[0].title;
+            } else {
+                document.getElementById('statNewest').innerText = "-";
+            }
+        }
+
+        function showToast(message, isError = false) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMessage').innerText = message;
+            
+            const icon = toast.querySelector('i');
+            if(isError) {
+                toast.classList.replace('border-green-400', 'border-red-400');
+                icon.className = 'fa-solid fa-circle-exclamation text-red-400 text-xl';
+            } else {
+                toast.classList.replace('border-red-400', 'border-green-400');
+                icon.className = 'fa-solid fa-check-circle text-green-400 text-xl';
+            }
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+    </script>
+</body>
+</html>
